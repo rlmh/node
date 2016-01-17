@@ -1,0 +1,86 @@
+<html>
+  <head>
+    <title>Chat APP</title>
+    <style>
+      #chat {
+        height: 400px;
+      }
+
+      #contentWrap {
+        display: none;
+      }
+
+      #chatWrap {
+        float: left;
+        border: 1px solid #000;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="nicknameWrap">
+      <p>Nickname</p>
+      <form id="setNickname">
+        <input size="35" id="nickname">
+        <input value="login" type="submit">
+      </form>
+      <p id="nicknameError"></p>
+    </div>
+
+    <div id="contentWrap">
+      <div id="chatWrap">
+        <div id="chat"></div>
+        <form id="send-message">
+          <input type="text" name="message" id="message">
+          <input type="submit" name="send" value="Send">
+        </form>
+      </div>
+      <div id="users"></div>
+    </div>
+    <script src="//code.jquery.com/jquery-latest.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      jQuery( function($) {
+        var socket = io.connect();
+        var chat = $("#chat");
+        var message = $("#message");
+        var messageForm = $("#send-message");
+        var nicknameForm = $("#setNickname");
+        var nicknameError = $("#nicknameError");
+        var nickname = $("#nickname");
+        var users = $("#users")
+
+        nicknameForm.submit(function(e) {
+          e.preventDefault();
+          socket.emit('new user', nickname.val(), function(data) {
+            if(data == true) {
+              $('#nicknameWrap').hide();
+              $("#contentWrap").show();
+            } else {
+              nicknameError.html('Error setting username ' + nickname.val());
+            }
+            nickname.val('');
+          });
+        })
+
+        messageForm.submit( function(e) {
+          e.preventDefault();
+          socket.emit('send message', message.val());
+          message.val('');
+        });
+
+        socket.on('new message', function(data) {
+          chat.append( '<b>' + data.user + '</b>: '+ data.message + '<br/>');
+        });
+
+        socket.on('usernames', function(data) {
+          var str = '';
+          for(i = 0; i < data.length; i++) {
+            str += data[i] + '<br/>'
+          }
+          users.html(str);
+        });
+
+      });
+    </script>
+  </body>
+</html>
